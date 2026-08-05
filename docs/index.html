@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Macone Kitchen Remodel — Estimate & Order Form</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="sheet">
+
+  <!-- ===== Letterhead ===== -->
+  <header class="letterhead">
+    <img class="logo" src="assets/q-logo.png" alt="Q." />
+    <div class="head-right">
+      <div class="head-title">KITCHEN REMODEL</div>
+      <div class="head-sub">ESTIMATE &amp; ORDER FORM</div>
+    </div>
+  </header>
+  <div class="accent-rule"></div>
+
+  <h1>Kitchen Remodel — Estimate &amp; Order Form</h1>
+  <p class="lede">Check the work you want. Your total updates automatically. Sign at the bottom and submit.</p>
+
+  <!-- ===== Parties ===== -->
+  <section class="parties">
+    <div class="party">
+      <div class="party-label">Homeowner</div>
+      <input type="text" id="homeowner" value="Charles Macone" />
+      <div class="addr-row">
+        <input type="text" id="addr_street" placeholder="Street address" value="Prospect Street" />
+      </div>
+      <div class="addr-row three">
+        <input type="text" id="addr_city" placeholder="City / Town" />
+        <input type="text" id="addr_state" placeholder="State" value="NY" />
+        <input type="text" id="addr_zip" placeholder="ZIP" />
+      </div>
+      <input type="email" id="homeowner_email" placeholder="Your email (for a copy)" />
+    </div>
+    <div class="party">
+      <div class="party-label">Contractor</div>
+      <input type="text" id="contractor" value="Heriberto Quiles" readonly />
+      <div class="valid-note">Estimate valid <strong>30 days</strong> from the date below.</div>
+      <div class="addr-row">
+        <input type="date" id="est_date" />
+      </div>
+    </div>
+  </section>
+
+  <div class="labor-note"><strong>All prices are LABOR ONLY.</strong> The homeowner purchases all cabinets and materials directly from The&nbsp;Home&nbsp;Depot. Section&nbsp;3 (widening one wall opening) can be combined with the Section&nbsp;1 cabinet work.</div>
+
+  <!-- ===== Quick pick ===== -->
+  <div class="band"><span>QUICK-PICK BUNDLES</span><span class="band-note">tap one, then adjust</span></div>
+  <div class="bundles">
+    <button type="button" class="bundle" data-bundle="A"><span class="b-name">Option A</span><span class="b-desc">Cabinets Only</span><span class="b-price">$8,000</span></button>
+    <button type="button" class="bundle" data-bundle="C"><span class="b-name">Option C</span><span class="b-desc">Cabinets + Island</span><span class="b-price">$10,000</span></button>
+    <button type="button" class="bundle" data-bundle="B"><span class="b-name">Option B</span><span class="b-desc">Cabinets + Widened Opening</span><span class="b-price">$14,800</span></button>
+    <button type="button" class="bundle clear" data-bundle="clear"><span class="b-name">Clear</span><span class="b-desc">Start over</span><span class="b-price">—</span></button>
+  </div>
+
+  <!-- ===== Section 1 ===== -->
+  <div class="band"><span>SECTION 1 — CABINET REPLACEMENT</span><span class="band-note">both walls · ≈21 linear feet</span></div>
+  <div class="items" id="sec1"></div>
+
+  <!-- ===== Section 2 ===== -->
+  <div class="band"><span>SECTION 2 — CENTER ISLAND</span><span class="band-note">add-on to Section 1</span></div>
+  <div class="items" id="sec2"></div>
+
+  <!-- ===== Section 3 ===== -->
+  <div class="band"><span>SECTION 3 — WIDEN ONE WALL OPENING</span><span class="band-note">structural · add-on</span></div>
+  <div class="items" id="sec3"></div>
+
+  <!-- ===== Section 4 ===== -->
+  <div class="band"><span>SECTION 4 — APPLIANCE / UTILITY ADD-ONS</span><span class="band-note">optional</span></div>
+  <div class="items" id="sec4"></div>
+
+  <!-- ===== Total ===== -->
+  <div class="band dark"><span>YOUR TOTAL</span><span class="band-note">labor</span></div>
+  <div class="totals">
+    <div class="trow"><span>Section 1 — Cabinet replacement</span><span id="t1">$0</span></div>
+    <div class="trow"><span>Section 2 — Center island</span><span id="t2">$0</span></div>
+    <div class="trow"><span>Section 3 — Widen wall opening</span><span id="t3">$0</span></div>
+    <div class="trow"><span>Section 4 — Appliance / utility add-ons</span><span id="t4">$0</span></div>
+    <div class="trow grand"><span>LABOR TOTAL</span><span id="grand">$0</span></div>
+    <div class="trow sub"><span>Deposit — 50% due at signing</span><span id="deposit">$0</span></div>
+    <div class="trow sub"><span>Balance — 50% due at completion</span><span id="balance">$0</span></div>
+    <div class="gasnote" id="gasnote" hidden>+ licensed gas-fitter reconnect billed at cost ($150–$400), not included in the labor total.</div>
+  </div>
+
+  <!-- ===== Signature ===== -->
+  <div class="band"><span>HOMEOWNER SIGN-OFF</span><span class="band-note">draw below</span></div>
+  <p class="sig-lede">By signing, I approve the selections above as the basis for a written home-improvement contract. This is an estimate/selection worksheet, not a contract.</p>
+  <div class="sig-wrap">
+    <canvas id="sigpad" class="sigpad"></canvas>
+    <button type="button" id="sigclear" class="sig-clear">Clear signature</button>
+  </div>
+  <div class="sign-fields">
+    <input type="text" id="sign_name" placeholder="Type your full name" value="Charles Macone" />
+    <input type="date" id="sign_date" />
+  </div>
+
+  <button type="button" id="submitBtn" class="submit">Submit my selections</button>
+  <div id="status" class="status" role="status" aria-live="polite"></div>
+
+  <p class="legal">This is an estimate and selection worksheet, not a contract. A full New York home-improvement contract will be prepared for the selections made. Materials are Owner-supplied. Prices exclude countertops, backsplash, appliances, plumbing relocation, painting, and hazardous-material abatement unless added by written Change Order. Not legal advice — have a local attorney review the final contract before signing.</p>
+
+  <footer class="footer">
+    <img src="assets/powered-by.png" alt="Powered by Q." class="powered" />
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

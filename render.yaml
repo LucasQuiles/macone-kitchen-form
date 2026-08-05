@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: macone-kitchen-form
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: TO_EMAIL
+        value: al@quiles.studio
+      - key: FROM_EMAIL
+        value: "Macone Kitchen Form <noreply@quiles.studio>"
+      - key: ALLOWED_ORIGIN
+        value: https://lucasquiles.github.io
+      - key: RESEND_API_KEY
+        sync: false
