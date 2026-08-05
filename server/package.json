@@ -4,7 +4,14 @@
   "private": true,
   "description": "Backend that emails signed Macone kitchen order-form submissions via Resend",
   "main": "index.js",
-  "engines": { "node": ">=18" },
-  "scripts": { "start": "node index.js" },
-  "dependencies": { "express": "^4.19.2" }
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pdf-lib": "^1.17.1"
+  }
 }

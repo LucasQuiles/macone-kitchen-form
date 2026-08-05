@@ -6,6 +6,7 @@
 "use strict";
 
 const express = require("express");
+const { buildPdf } = require("./pdf");
 
 const PORT = process.env.PORT || 3000;
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
@@ -92,15 +93,28 @@ app.post("/submit", async (req, res) => {
     const owner = d.homeowner || "Homeowner";
     const total = money(d.totals && d.totals.labor_total);
 
+    // Completed, signed PDF of the order form (selections + totals + signature on the line)
+    let pdfB64 = null;
+    try {
+      const pdfBuf = await buildPdf(d);
+      pdfB64 = pdfBuf.toString("base64");
+    } catch (e) {
+      console.error("pdf build failed", e);
+    }
+    const pdfName = `Kitchen-Order-Form-${String(owner).replace(/[^A-Za-z0-9]+/g, "-")}-signed.pdf`;
+
+    const attachments = [
+      { filename: "signature.png", content: b64, content_id: "signature" },
+      { filename: "submission.json", content: Buffer.from(JSON.stringify(d, null, 2)).toString("base64") },
+    ];
+    if (pdfB64) attachments.unshift({ filename: pdfName, content: pdfB64 });
+
     const emailBody = {
       from: FROM_EMAIL,
       to: [TO_EMAIL],
       subject: `Kitchen selections — ${owner} — ${total} labor`,
-      html: buildHtml(d),
-      attachments: [
-        { filename: "signature.png", content: b64, content_id: "signature" },
-        { filename: "submission.json", content: Buffer.from(JSON.stringify(d, null, 2)).toString("base64") },
-      ],
+      html: buildHtml(d) + (pdfB64 ? "" : "<p style=\"color:#b00\">(PDF generation failed — see JSON attachment.)</p>"),
+      attachments,
     };
     if (d.homeowner_email) emailBody.reply_to = d.homeowner_email;
 
