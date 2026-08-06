@@ -11,6 +11,11 @@ const { buildPdf } = require("./pdf");
 const PORT = process.env.PORT || 3000;
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const TO_EMAIL = process.env.TO_EMAIL || "al@quiles.studio";
+// Optional copy recipients (comma-separated), e.g. the contractor. Sent as Cc.
+const CC_EMAIL = (process.env.CC_EMAIL || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 const FROM_EMAIL = process.env.FROM_EMAIL || "Macone Kitchen Form <noreply@quiles.studio>";
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 
@@ -116,6 +121,7 @@ app.post("/submit", async (req, res) => {
       html: buildHtml(d) + (pdfB64 ? "" : "<p style=\"color:#b00\">(PDF generation failed — see JSON attachment.)</p>"),
       attachments,
     };
+    if (CC_EMAIL.length) emailBody.cc = CC_EMAIL;
     if (d.homeowner_email) emailBody.reply_to = d.homeowner_email;
 
     const r = await fetch("https://api.resend.com/emails", {
