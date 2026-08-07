@@ -345,11 +345,13 @@ app.post("/api/sign", async (req, res) => {
       s.image = image;
       s.signed_date = todayISO();
       s.signed_at = new Date().toISOString();
-      // Capture the full property address (house number + street) supplied at
-      // signing when the stored street is still incomplete.
+      // Capture the full property address supplied at signing when the stored
+      // street is still incomplete. The field collects the complete line
+      // (house number + street + city/state/zip), so store it as the street and
+      // clear the separate parts — otherwise contract/receipt address rendering
+      // would append and duplicate city/state/zip.
       if (addr && !hasStreetNumber(env.contract)) {
-        env.contract.property = env.contract.property || {};
-        env.contract.property.street = addr;
+        env.contract.property = { street: addr, city: "", state: "", zip: "" };
       }
       const both = env.signers.customer.signed_at && env.signers.contractor.signed_at;
       env.status = both ? "signed_both" : "partial";
