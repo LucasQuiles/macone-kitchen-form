@@ -8,6 +8,7 @@
 const express = require("express");
 const crypto = require("crypto");
 const { buildPdf } = require("./pdf");
+const { buildContractPdf, contractClauses } = require("./contract");
 const store = require("./store");
 
 const PORT = process.env.PORT || 3000;
@@ -115,21 +116,35 @@ async function sendResendEmail({ to, cc, subject, html, attachments, replyTo }) 
   return out.id;
 }
 
-// Build the signed-PDF + JSON attachments for a contract object `d`.
+// Build the fully-executed attachments for a finalized contract object `d`:
+//   1. the full Residential Home Improvement Contract (primary legal doc)
+//   2. the itemized signed order-form receipt
+//   3. submission.json (machine-readable record)
 async function buildAttachments(d) {
   const owner = d.homeowner || "Homeowner";
-  let pdfB64 = null;
+  const slug = String(owner).replace(/[^A-Za-z0-9]+/g, "-");
+
+  let contractB64 = null;
   try {
-    pdfB64 = (await buildPdf(d)).toString("base64");
+    contractB64 = (await buildContractPdf(d)).toString("base64");
   } catch (e) {
-    console.error("pdf build failed", e);
+    console.error("contract pdf build failed", e);
   }
-  const pdfName = `Kitchen-Order-Form-${String(owner).replace(/[^A-Za-z0-9]+/g, "-")}-signed.pdf`;
+  let receiptB64 = null;
+  try {
+    receiptB64 = (await buildPdf(d)).toString("base64");
+  } catch (e) {
+    console.error("receipt pdf build failed", e);
+  }
+
+  const contractName = `Home-Improvement-Contract-${slug}-executed.pdf`;
+  const receiptName = `Kitchen-Order-Form-${slug}-signed.pdf`;
   const attachments = [
     { filename: "submission.json", content: Buffer.from(JSON.stringify(d, null, 2)).toString("base64") },
   ];
-  if (pdfB64) attachments.unshift({ filename: pdfName, content: pdfB64 });
-  return { attachments, pdfB64, pdfName };
+  if (receiptB64) attachments.unshift({ filename: receiptName, content: receiptB64 });
+  if (contractB64) attachments.unshift({ filename: contractName, content: contractB64 });
+  return { attachments, contractB64, receiptB64, contractName, receiptName };
 }
 
 app.post("/submit", async (req, res) => {
@@ -200,6 +215,14 @@ const ROLES = { customer: "Homeowner", contractor: "Contractor" };
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
+// A complete street line has a house number (a leading digit). The finalized
+// order only captured "Prospect Street", so the homeowner supplies the full
+// address at signing time.
+function hasStreetNumber(contract) {
+  const street = ((contract || {}).property || {}).street || "";
+  return /\d/.test(street);
+}
+
 function roleForToken(env, t) {
   if (!t || !env.tokens) return null;
   if (env.tokens.customer === t) return "customer";
@@ -212,14 +235,18 @@ function finalizedContract(env) {
   const c = env.contract || {};
   const cust = env.signers.customer || {};
   const contr = env.signers.contractor || {};
+  const signedAt = env.completed_at || new Date().toISOString();
   return {
     ...c,
     homeowner: cust.name || c.homeowner,
     homeowner_email: cust.email || c.homeowner_email,
-    contractor: contr.name || c.contractor,
+    // Party reference on the contract stays as configured (e.g. "Heriberto");
+    // the printed signature name is whatever the contractor typed.
+    contractor: c.contractor || contr.name,
+    contract_date: signedAt.slice(0, 10),
     customer_signature: { name: cust.name, date: cust.signed_date, image: cust.image },
     contractor_signature: { name: contr.name, date: contr.signed_date, image: contr.image },
-    signed_at: env.completed_at || new Date().toISOString(),
+    signed_at: signedAt,
     fully_executed: true,
   };
 }
@@ -277,6 +304,8 @@ app.get("/api/envelope", async (req, res) => {
       other_signed: Boolean(other.signed_at),
       status: env.status,
       contract: env.contract,
+      contract_terms: contractClauses(env.contract),
+      need_address: role === "customer" && !hasStreetNumber(env.contract),
     });
   } catch (err) {
     console.error("envelope error", err);
@@ -289,9 +318,10 @@ app.post("/api/sign", async (req, res) => {
   try {
     if (!store.enabled()) return res.status(500).json({ error: "store not configured" });
     if (!RESEND_API_KEY) return res.status(500).json({ error: "email not configured" });
-    const { e, t, name, email, image } = req.body || {};
+    const { e, t, name, email, image, address } = req.body || {};
     const nm = String(name || "").trim();
     const em = String(email || "").trim();
+    const addr = String(address || "").trim();
     if (!nm) return res.status(400).json({ error: "name required" });
     if (!emailRe.test(em)) return res.status(400).json({ error: "valid email required" });
     if (typeof image !== "string" || !/^data:image\/png;base64,/.test(image) || image.length < 200)
@@ -302,6 +332,8 @@ app.post("/api/sign", async (req, res) => {
     if (!probe.data) return res.status(404).json({ error: "not found" });
     const role = roleForToken(probe.data, t);
     if (!role) return res.status(403).json({ error: "invalid link" });
+    if (role === "customer" && !hasStreetNumber(probe.data.contract) && !hasStreetNumber({ property: { street: addr } }))
+      return res.status(400).json({ error: "address required", message: "Please enter the full property street address (including house number)." });
     if (probe.data.signers[role].signed_at)
       return res.status(409).json({ error: "already_signed", message: "This copy has already been signed." });
 
@@ -313,6 +345,12 @@ app.post("/api/sign", async (req, res) => {
       s.image = image;
       s.signed_date = todayISO();
       s.signed_at = new Date().toISOString();
+      // Capture the full property address (house number + street) supplied at
+      // signing when the stored street is still incomplete.
+      if (addr && !hasStreetNumber(env.contract)) {
+        env.contract.property = env.contract.property || {};
+        env.contract.property.street = addr;
+      }
       const both = env.signers.customer.signed_at && env.signers.contractor.signed_at;
       env.status = both ? "signed_both" : "partial";
       return env;
@@ -395,12 +433,26 @@ const SIGN_PAGE = `<!doctype html>
   .err{background:#fdecea;color:#b3261e}
   .badge{display:inline-block;font-size:12px;padding:3px 8px;border-radius:20px;background:#eef;color:#3b3f8a;margin-left:8px}
   .hide{display:none}
+  details.fullc{padding:0}
+  details.fullc summary{cursor:pointer;padding:16px 18px;font-weight:700;font-size:15px;list-style:none}
+  details.fullc summary::-webkit-details-marker{display:none}
+  details.fullc summary::after{content:"▸";float:right;color:var(--accent)}
+  details.fullc[open] summary::after{content:"▾"}
+  details.fullc[open] summary{border-bottom:1px solid var(--hair)}
+  .clauses{max-height:52vh;overflow:auto;padding:6px 18px 16px}
+  .clause-h{font-size:12px;font-weight:700;color:var(--ink);margin:14px 0 4px;letter-spacing:.02em}
+  .clause-p{font-size:12.5px;line-height:1.5;color:var(--muted);margin:0 0 6px}
+  .intro-p{font-size:12.5px;line-height:1.5;color:var(--muted);margin:2px 0 8px}
 </style></head>
 <body><div class="wrap">
   <h1>Kitchen Remodel — Contract</h1>
   <p class="sub" id="sub">Loading…</p>
   <div id="app" class="hide">
     <div class="card" id="contract"></div>
+    <details class="card fullc" id="fullwrap">
+      <summary>View the full contract</summary>
+      <div class="clauses" id="fulltext"></div>
+    </details>
     <div class="card">
       <h3 style="margin:0 0 4px">Your signature <span class="badge" id="rolebadge"></span></h3>
       <p class="note" style="margin:0 0 6px">Review the contract above, then sign to accept.</p>
@@ -408,6 +460,10 @@ const SIGN_PAGE = `<!doctype html>
       <input type="text" id="name" autocomplete="name"/>
       <label for="email">Your email (your signed copy is sent here)</label>
       <input type="email" id="email" autocomplete="email" inputmode="email"/>
+      <div id="addrwrap" class="hide">
+        <label for="address">Property street address (house number + street)</label>
+        <input type="text" id="address" autocomplete="street-address" placeholder="e.g. 123 Prospect Street, Kingston, NY 12401"/>
+      </div>
       <label>Draw your signature</label>
       <canvas id="pad"></canvas>
       <div class="padrow"><span class="note">Sign with mouse or finger</span><button class="clear" id="clear" type="button">Clear</button></div>
@@ -441,6 +497,13 @@ const SIGN_PAGE = `<!doctype html>
     var d1=el("div","split");d1.appendChild(el("span",null,"Deposit due at start (50%)"));d1.appendChild(el("span",null,money(t.deposit)));box.appendChild(d1);
     var d2=el("div","split");d2.appendChild(el("span",null,"Balance at completion (50%)"));d2.appendChild(el("span",null,money(t.balance)));box.appendChild(d2);
   }
+  function renderFull(terms){
+    var box=$("fulltext");clear(box);
+    (terms||[]).forEach(function(sec){
+      if(sec.heading){box.appendChild(el("div","clause-h",sec.heading))}
+      (sec.paras||[]).forEach(function(p){box.appendChild(el("div",sec.heading?"clause-p":"intro-p",p))});
+    });
+  }
   var pad;
   function setupPad(){
     var c=$("pad"); var ratio=Math.max(window.devicePixelRatio||1,1);
@@ -465,18 +528,28 @@ const SIGN_PAGE = `<!doctype html>
      $("name").value=d.default_name||"";
      $("email").value=d.default_email||"";
      renderContract(d.contract);
+     renderFull(d.contract_terms);
+     if(d.need_address){
+       $("addrwrap").classList.remove("hide");
+       var cp=(d.contract&&d.contract.property)||{};
+       var pre=[cp.street,[cp.city,cp.state].filter(Boolean).join(", "),cp.zip].filter(Boolean).join(", ");
+       $("address").value=pre;
+     }
      $("app").classList.remove("hide");
      setupPad();
      $("clear").onclick=function(){pad.clear()};
      $("signbtn").onclick=function(){
        clear($("msg"));
        var nm=$("name").value.trim(), em=$("email").value.trim();
+       var needAddr=!$("addrwrap").classList.contains("hide");
+       var addr=needAddr?$("address").value.trim():"";
        if(!nm){setMsg($("msg"),"err","Please enter your full name.");return}
        if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(em)){setMsg($("msg"),"err","Please enter a valid email.");return}
+       if(needAddr&&!/\\d/.test(addr)){setMsg($("msg"),"err","Please enter the full property address, including the house number.");return}
        if(pad.isEmpty()){setMsg($("msg"),"err","Please draw your signature.");return}
        var btn=$("signbtn"); btn.disabled=true; btn.textContent="Submitting…";
        fetch("/api/sign",{method:"POST",headers:{"Content-Type":"application/json"},
-         body:JSON.stringify({e:E,t:T,name:nm,email:em,image:pad.toDataURL("image/png")})})
+         body:JSON.stringify({e:E,t:T,name:nm,email:em,address:addr,image:pad.toDataURL("image/png")})})
         .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j}})})
         .then(function(x){
           if(!x.ok){btn.disabled=false;btn.textContent="Sign & Accept";setMsg($("msg"),"err",x.j.message||x.j.error||"Something went wrong.");return}
