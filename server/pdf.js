@@ -86,15 +86,20 @@ async function buildPdf(d) {
   const logo = logoBytes ? await doc.embedPng(logoBytes) : null;
   const powered = poweredBytes ? await doc.embedPng(poweredBytes) : null;
 
-  let sigImg = null;
-  if (d.signature && d.signature.image) {
+  // Homeowner signature (customer_signature preferred; falls back to legacy single-sign `signature`)
+  const homeSig = d.customer_signature || d.signature || {};
+  const contractorSig = d.contractor_signature || {};
+  const embedSig = async (src) => {
+    if (!src || !src.image) return null;
     try {
-      const b64 = String(d.signature.image).replace(/^data:image\/\w+;base64,/, "");
-      sigImg = await doc.embedPng(Buffer.from(b64, "base64"));
+      const b64 = String(src.image).replace(/^data:image\/\w+;base64,/, "");
+      return await doc.embedPng(Buffer.from(b64, "base64"));
     } catch {
-      sigImg = null;
+      return null;
     }
-  }
+  };
+  const sigImg = await embedSig(homeSig);
+  const contractorImg = await embedSig(contractorSig);
 
   let page = doc.addPage([PAGE_W, PAGE_H]);
   let y = PAGE_H - MARGIN;
@@ -243,29 +248,32 @@ async function buildPdf(d) {
   const rightX = MARGIN + colW + 30;
   const lineY = y - 46;
 
-  // Homeowner signature image sits just above its line
-  if (sigImg) {
+  // Signature image sits just above its line
+  const drawSig = (img, x) => {
+    if (!img) return;
     const maxW = colW - 10;
     const maxH = 40;
-    let sw = sigImg.width;
-    let sh = sigImg.height;
+    let sw = img.width;
+    let sh = img.height;
     const scale = Math.min(maxW / sw, maxH / sh);
     sw *= scale;
     sh *= scale;
-    page.drawImage(sigImg, { x: leftX + 2, y: lineY + 3, width: sw, height: sh });
-  }
+    page.drawImage(img, { x: x + 2, y: lineY + 3, width: sw, height: sh });
+  };
+  drawSig(sigImg, leftX);
+  drawSig(contractorImg, rightX);
   // signature lines
   page.drawLine({ start: { x: leftX, y: lineY }, end: { x: leftX + colW, y: lineY }, thickness: 0.8, color: INK });
   page.drawLine({ start: { x: rightX, y: lineY }, end: { x: rightX + colW, y: lineY }, thickness: 0.8, color: INK });
 
-  const sig = d.signature || {};
+  const blankDate = "______________________";
   text("HOMEOWNER SIGNATURE", leftX, lineY - 12, 7.5, bold, MUTED);
-  text(sig.name || d.homeowner || "", leftX, lineY - 26, 10.5, font, INK);
-  text("Date: " + (sig.date || d.estimate_date || ""), leftX, lineY - 40, 9, font, MUTED);
+  text(homeSig.name || d.homeowner || "", leftX, lineY - 26, 10.5, font, INK);
+  text("Date: " + (homeSig.date || (sigImg ? d.estimate_date : "") || blankDate), leftX, lineY - 40, 9, font, MUTED);
 
   text("CONTRACTOR SIGNATURE", rightX, lineY - 12, 7.5, bold, MUTED);
-  text(d.contractor || "Heriberto Quiles", rightX, lineY - 26, 10.5, font, INK);
-  text("Date: ______________________", rightX, lineY - 40, 9, font, MUTED);
+  text(contractorSig.name || d.contractor || "Heriberto Quiles", rightX, lineY - 26, 10.5, font, INK);
+  text("Date: " + (contractorSig.date || blankDate), rightX, lineY - 40, 9, font, MUTED);
   y = lineY - 52;
 
   // ---- Footer on every page (powered-by + page numbers) ----
