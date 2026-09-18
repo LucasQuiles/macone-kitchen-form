@@ -1,0 +1,183 @@
+\documentclass[11pt]{article}
+
+% ---------- Page geometry: A4, print-safe margins ----------
+\usepackage[a4paper,top=3.1cm,bottom=2.6cm,left=2cm,right=2cm,headheight=1.5cm,headsep=0.6cm,footskip=1.1cm]{geometry}
+
+% ---------- Fonts (Helvetica-class sans for a clean premium look) ----------
+\usepackage[T1]{fontenc}
+\usepackage[scaled=0.96]{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{microtype}
+
+% ---------- Packages ----------
+\usepackage{xcolor}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{colortbl}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{ragged2e}
+\usepackage[hidelinks]{hyperref}
+
+% ---------- Brand palette ----------
+\definecolor{ink}{HTML}{1B1F2A}      % near-black charcoal (logo colour)
+\definecolor{slate}{HTML}{464C5A}    % secondary text
+\definecolor{accent}{HTML}{B08D57}   % muted bronze/gold accent
+\definecolor{cream}{HTML}{F5F2EC}    % soft row / panel fill
+\definecolor{hair}{HTML}{D8D2C6}     % hairline rule
+\definecolor{price}{HTML}{1B1F2A}
+
+\color{ink}
+
+% ---------- Header / footer ----------
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\raisebox{-0.30cm}{\includegraphics[height=0.95cm]{assets/q-logo.png}}}
+\rhead{\footnotesize\color{slate}\textbf{KITCHEN REMODEL}\\[-1pt]\mbox{}\hfill\scriptsize ESTIMATE \& ORDER FORM}
+\renewcommand{\headrule}{\vspace{2pt}{\color{accent}\rule{\headwidth}{1.1pt}}}
+\lfoot{\scriptsize\color{slate}Prepared by \textbf{Q.} for the Macone Residence}
+\cfoot{\raisebox{-0.15cm}{\includegraphics[height=0.42cm]{assets/powered-by.png}}}
+\rfoot{\scriptsize\color{slate}Page \thepage\ of \pageref{LastPage}}
+\renewcommand{\footrule}{{\color{hair}\rule{\headwidth}{0.4pt}}\vspace{3pt}}
+\setlength{\headwidth}{\textwidth}
+
+% ---------- Helpers ----------
+\newcommand{\cb}{\textcolor{accent}{\large$\square$}}
+\newcolumntype{P}{>{\raggedleft\arraybackslash}p{2.4cm}}
+\newcolumntype{C}{>{\centering\arraybackslash}p{0.9cm}}
+
+% Section band
+\newcommand{\band}[2]{%
+  \vspace{9pt}%
+  \noindent\colorbox{ink}{\parbox{\dimexpr\textwidth-2\fboxsep\relax}{%
+    \vspace{2.5pt}\color{white}\textbf{\small #1}\hfill{\footnotesize\color{accent}#2}\vspace{2.5pt}}}%
+  \vspace{5pt}\par}
+
+% Row macros for the itemised menu
+\newcommand{\hitem}[3]{\cb & \raggedright #1 & \textbf{#2}\,#3 \\[2pt]}
+
+% Single-line label ... value row with hairline (avoids paragraph-cell offset)
+\newcommand{\rowline}[2]{\vspace{4pt}\noindent#1\hfill #2\par\vspace{4pt}{\color{hair}\hrule height 0.4pt}}
+
+\setlength{\parindent}{0pt}
+\renewcommand{\arraystretch}{1.28}
+
+\begin{document}
+
+% ======================= TITLE BLOCK =======================
+{\color{ink}\Large\textbf{Kitchen Remodel — Estimate \& Order Form}}\\[3pt]
+{\color{slate}\small Choose the work you want. Check each line, then total your selections at the bottom.}\\[8pt]
+
+\noindent\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}X @{\hspace{10pt}}>{\raggedright\arraybackslash}X@{}}
+\footnotesize\color{slate}
+\textbf{\color{ink}Prepared for}\newline
+\underline{\hspace{2.2cm}} Macone \newline
+\rule{0pt}{10pt}\underline{\hspace{0.9cm}} Prospect Street, \underline{\hspace{2.2cm}}, NY \underline{\hspace{1.1cm}}
+&
+\footnotesize\color{slate}
+\textbf{\color{ink}Contractor}\newline
+\underline{\hspace{4.4cm}}\ \ License \underline{\hspace{1.6cm}}\newline
+\rule{0pt}{10pt}Date \underline{\hspace{2cm}}, 2026\ \ \textbullet\ \ \textbf{\color{accent}Valid 30 days}
+\end{tabularx}
+
+\vspace{7pt}
+\noindent\colorbox{cream}{\parbox{\dimexpr\textwidth-2\fboxsep\relax}{\vspace{3pt}\footnotesize\color{slate}
+\textbf{\color{ink}All prices are LABOR ONLY.} The homeowner purchases all cabinets and materials directly from The Home Depot. Check the lines you want in any section and total them at the bottom — Section~3 (widening one wall opening) can be combined with the Section~1 cabinet work.\vspace{3pt}}}
+
+% ======================= SECTION 1 =======================
+\band{SECTION 1 — CABINET REPLACEMENT}{both walls · $\approx$21 linear feet}
+
+\noindent\begin{tabularx}{\textwidth}{@{}C >{\raggedright\arraybackslash}X P@{}}
+\hitem{Remove existing cabinets on both walls ($\approx$21 LF) and haul away}{\$1{,}200}{}
+\arrayrulecolor{hair}\midrule
+\hitem{Remove \& replace the sheetrock behind the cabinets on both walls; tape, mud \& finish to paint-ready}{\$2{,}300}{}
+\midrule
+\hitem{Install new Owner-supplied cabinets — uppers \& lowers, both walls; set level, plumb, secured, doors/drawers adjusted}{\$4{,}000}{}
+\midrule
+\hitem{Pull out, reset \& reconnect the refrigerator and stove; leave correct openings}{\$500}{}
+\end{tabularx}
+
+\vspace{3pt}
+\hfill{\footnotesize\color{slate}All four selected = \textbf{\color{ink}Option A — Cabinets Only, \$8{,}000}}
+
+% ======================= SECTION 2 =======================
+\band{SECTION 2 — CENTER ISLAND}{add-on to Section 1}
+
+\noindent\begin{tabularx}{\textwidth}{@{}C >{\raggedright\arraybackslash}X P@{}}
+\hitem{Assemble, set, level \& anchor a new Owner-supplied island cabinet base}{\$2{,}000}{}
+\end{tabularx}
+
+\vspace{3pt}
+\hfill{\footnotesize\color{slate}Section 1 + island base = \textbf{\color{ink}Option C — Cabinets + Island, \$10{,}000}}
+
+% ======================= SECTION 3 =======================
+\band{SECTION 3 — WIDEN ONE WALL OPENING}{structural · add-on to Section 1}
+
+\noindent\begin{tabularx}{\textwidth}{@{}C >{\raggedright\arraybackslash}X P@{}}
+\hitem{Widen one load-bearing wall opening from $42''$ to $75''$; temporary shoring; install engineered header/beam \& posts per a NY licensed engineer's stamped design}{\$4{,}500}{}
+\arrayrulecolor{hair}\midrule
+\hitem{Close, tape, mud \& finish the wall \& ceiling around the new opening to paint-ready}{\$1{,}500}{}
+\midrule
+\hitem{Patch \& infill flooring at the widened opening}{\$800}{}
+\end{tabularx}
+
+\vspace{3pt}
+\hfill{\footnotesize\color{slate}All three selected = \textbf{\color{ink}\$6{,}800}\ ·\ with Section 1 = \textbf{\color{ink}Option B — Cabinets + Widened Opening, \$14{,}800}}
+
+% ======================= SECTION 4 =======================
+\vspace{9pt}
+\noindent\begin{minipage}{\textwidth}
+\band{SECTION 4 — APPLIANCE / UTILITY ADD-ONS}{optional}
+
+\noindent\begin{tabularx}{\textwidth}{@{}C >{\raggedright\arraybackslash}X P@{}}
+\hitem{Hang \& wire a new Owner-supplied chandelier at the existing ceiling box \textnormal{\scriptsize(new box / relocated wiring by Change Order)}}{\$350}{}
+\arrayrulecolor{hair}\midrule
+\hitem{Licensed gas-fitter reconnect — only if the stove is gas \textnormal{\scriptsize(separate licensed gas-fitter)}}{\$150–\$400}{}
+\end{tabularx}
+\end{minipage}
+
+% ======================= TOTAL WORKSHEET =======================
+\band{YOUR TOTAL}{labor}
+
+\noindent\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}X P@{}}
+Section 1 — Cabinet replacement & \$\underline{\hspace{2cm}} \\ \arrayrulecolor{hair}\midrule
+Section 2 — Center island add-ons & \$\underline{\hspace{2cm}} \\ \midrule
+Section 3 — Widen wall opening & \$\underline{\hspace{2cm}} \\ \midrule
+Section 4 — Appliance / utility add-ons & \$\underline{\hspace{2cm}} \\
+\end{tabularx}
+
+\vspace{2pt}
+\noindent\colorbox{ink}{\parbox{\dimexpr\textwidth-2\fboxsep\relax}{\vspace{2pt}%
+\color{white}\textbf{LABOR TOTAL}\hfill\textbf{\$\underline{\hspace{2.4cm}}}\vspace{2pt}}}
+
+\vspace{6pt}
+{\color{slate}Deposit — 50\% due at signing}\hfill \$\underline{\hspace{2.4cm}}\par
+\vspace{6pt}
+{\color{slate}Balance — 50\% due at completion}\hfill \$\underline{\hspace{2.4cm}}\par
+
+% ======================= QUICK-PICK BUNDLES =======================
+\band{QUICK-PICK BUNDLES}{or just choose one}
+
+\noindent\begin{tabularx}{\textwidth}{@{}C >{\raggedright\arraybackslash}X P@{}}
+\hitem{\textbf{Option A — Cabinets Only.} Section 1 in full.}{\$8{,}000}{}
+\arrayrulecolor{hair}\midrule
+\hitem{\textbf{Option C — Cabinets + Island.} Section 1 + island base.}{\$10{,}000}{}
+\midrule
+\hitem{\textbf{Option B — Cabinets + Widened Opening.} Section 1 + Section 3.}{\$14{,}800}{}
+\end{tabularx}
+
+% ======================= SIGN-OFF =======================
+\vspace{10pt}
+\noindent\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}X @{\hspace{18pt}}>{\raggedright\arraybackslash}X@{}}
+\rule{0pt}{22pt}\underline{\hspace{\linewidth}}\newline {\footnotesize\color{slate}Homeowner signature \textbullet\ Date}
+&
+\rule{0pt}{22pt}\underline{\hspace{\linewidth}}\newline {\footnotesize\color{slate}Contractor signature \textbullet\ Date}
+\end{tabularx}
+
+\vspace{8pt}
+{\scriptsize\color{slate}\RaggedRight This is an estimate and selection worksheet, not a contract. A full New York home-improvement contract will be prepared for the selections made. Materials are Owner-supplied. Prices exclude countertops, backsplash, appliances, plumbing relocation, painting, and hazardous-material abatement unless added by written Change Order. Not legal advice — have a local attorney review the final contract before signing.\par}
+
+\label{LastPage}
+\end{document}
